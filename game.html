@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luchtafweer Kanon Spel</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const cannon = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            angle: 0,
+            width: 20,
+            height: 60
+        };
+
+        const bullets = [];
+        const enemies = [];
+        let enemySpeed = 2;
+        let enemySpawnRate = 100; // frames per spawn
+        let frameCount = 0;
+        let score = 0;
+
+        function drawCannon() {
+            ctx.save();
+            ctx.translate(cannon.x, cannon.y);
+            ctx.rotate((cannon.angle) * Math.PI / 180);
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.moveTo(0, -cannon.height);
+            ctx.lineTo(-cannon.width / 2, 0);
+            ctx.lineTo(cannon.width / 2, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function spawnEnemy() {
+            const x = Math.random() * (canvas.width - 40) + 20;
+            enemies.push({ x, y: 0, width: 40, height: 20 });
+        }
+
+        function drawEnemies() {
+            ctx.fillStyle = 'white';
+            enemies.forEach(enemy => {
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            });
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = 'blue';
+            bullets.forEach(bullet => {
+                ctx.beginPath();
+                ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function update() {
+            frameCount++;
+
+            // Update bullets
+            bullets.forEach((bullet, index) => {
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+                if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+                    bullets.splice(index, 1);
+                }
+            });
+
+            // Spawn enemies
+            if (frameCount % enemySpawnRate === 0) {
+                spawnEnemy();
+            }
+
+            // Update enemies
+            enemies.forEach((enemy, index) => {
+                enemy.y += enemySpeed;
+                if (enemy.y > canvas.height) {
+                    enemies.splice(index, 1);
+                }
+                bullets.forEach((bullet, bulletIndex) => {
+                    if (
+                        bullet.x > enemy.x &&
+                        bullet.x < enemy.x + enemy.width &&
+                        bullet.y > enemy.y &&
+                        bullet.y < enemy.y + enemy.height
+                    ) {
+                        enemies.splice(index, 1);
+                        bullets.splice(bulletIndex, 1);
+                        score++;
+                    }
+                });
+            });
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCannon();
+            drawBullets();
+            drawEnemies();
+            drawScore();
+
+            update();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setDifficulty() {
+            let difficulty = parseInt(prompt("Kies een moeilijkheidsniveau (1-5):", "1"));
+            if (difficulty >= 1 && difficulty <= 5) {
+                enemySpeed = difficulty * 2;
+                enemySpawnRate = 120 - difficulty * 20;
+            } else {
+                alert("Ongeldige invoer! Standaard moeilijkheid ingesteld.");
+            }
+        }
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') {
+                cannon.angle = (cannon.angle - 7 + 360) % 360;
+            } else if (e.key === 'ArrowRight') {
+                cannon.angle = (cannon.angle + 7) % 360;
+            } else if (e.key === ' ') {
+                const radians = (cannon.angle - 90) * Math.PI / 180;
+                const dx = Math.cos(radians) * 7;
+                const dy = Math.sin(radians) * 7;
+                bullets.push({ x: cannon.x, y: cannon.y, dx, dy });
+            }
+        });
+
+        setDifficulty();
+        gameLoop();
+    </script>
+</body>
+</html>
