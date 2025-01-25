@@ -43,7 +43,7 @@
         function drawCannon() {
             ctx.save();
             ctx.translate(cannon.x, cannon.y);
-            ctx.rotate((cannon.angle) * Math.PI / 180);
+            ctx.rotate((cannon.angle ) * Math.PI / 180);
             ctx.fillStyle = 'red';
             ctx.beginPath();
             ctx.moveTo(0, -cannon.height);
@@ -142,6 +142,20 @@
             }
         }
 
+        function handleTouchStart(event) {
+            const touch = event.touches[0];
+            const dx = touch.clientX - cannon.x;
+            const dy = touch.clientY - cannon.y;
+            cannon.angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+        }
+
+        function handleTouchEnd() {
+            const radians = (cannon.angle - 90) * Math.PI / 180;
+            const dx = Math.cos(radians) * 7;
+            const dy = Math.sin(radians) * 7;
+            bullets.push({ x: cannon.x, y: cannon.y, dx, dy });
+        }
+
         window.addEventListener('keydown', e => {
             if (e.key === 'ArrowLeft') {
                 cannon.angle = (cannon.angle - 7 + 360) % 360;
@@ -154,6 +168,9 @@
                 bullets.push({ x: cannon.x, y: cannon.y, dx, dy });
             }
         });
+
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchend', handleTouchEnd);
 
         setDifficulty();
         gameLoop();
