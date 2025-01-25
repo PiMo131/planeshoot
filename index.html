@@ -39,6 +39,7 @@
         let enemySpawnRate = 100; // frames per spawn
         let frameCount = 0;
         let score = 0;
+        let touchActive = false;
 
         function drawCannon() {
             ctx.save();
@@ -143,17 +144,30 @@
         }
 
         function handleTouchStart(event) {
+            touchActive = true;
             const touch = event.touches[0];
-            const dx = touch.clientX - cannon.x;
-            const dy = touch.clientY - cannon.y;
-            cannon.angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            updateCannonAngle(touch.clientX, touch.clientY);
+        }
+
+        function handleTouchMove(event) {
+            if (touchActive) {
+                const touch = event.touches[0];
+                updateCannonAngle(touch.clientX, touch.clientY);
+            }
         }
 
         function handleTouchEnd() {
+            touchActive = false;
             const radians = (cannon.angle - 90) * Math.PI / 180;
             const dx = Math.cos(radians) * 7;
             const dy = Math.sin(radians) * 7;
             bullets.push({ x: cannon.x, y: cannon.y, dx, dy });
+        }
+
+        function updateCannonAngle(touchX, touchY) {
+            const dx = touchX - cannon.x;
+            const dy = touchY - cannon.y;
+            cannon.angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
         }
 
         window.addEventListener('keydown', e => {
@@ -170,6 +184,7 @@
         });
 
         canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
         canvas.addEventListener('touchend', handleTouchEnd);
 
         setDifficulty();
