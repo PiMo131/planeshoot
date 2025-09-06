@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Luchtafweer Kanon Spel</title>
+  <title>Luchtafweer Kanon Spel — horizontale vijanden</title>
   <style>
     body{margin:0;overflow:hidden;background:#000}
     canvas{display:block}
@@ -79,10 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.restore();
   }
 
+  // === BELANGRIJK: vijanden spawnen nu rechts en vliegen naar links ===
   function spawnEnemy() {
     const { width, height } = getEnemySize();
-    const x = Math.random() * (canvas.width - width);
-    enemies.push({ x, y: -height, width, height });
+    const y = Math.random() * (canvas.height - height);
+    const x = canvas.width + width; // start net buiten beeld rechts
+    enemies.push({ x, y, width, height });
   }
 
   function rescaleEnemies() {
@@ -93,7 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function drawEnemies() {
     enemies.forEach(enemy => {
       if (planeReady) {
-        ctx.drawImage(planeImg, enemy.x, enemy.y, enemy.width, enemy.height);
+        // Optioneel: vliegtuig horizontaal spiegelen zodat het naar links "kijkt"
+        ctx.save();
+        ctx.translate(enemy.x, enemy.y);
+        //ctx.scale(-1, 1); // horizontaal spiegelen
+        ctx.drawImage(planeImg, -enemy.width, 0, enemy.width, enemy.height);
+        ctx.restore();
       } else {
         // fallback
         ctx.fillStyle = 'white';
@@ -127,14 +134,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Spawn enemies
     if (frameCount % enemySpawnRate === 0) spawnEnemy();
 
-    // Update enemies + collision
+    // Update enemies + collision (nu naar links bewegen)
     for (let i = enemies.length - 1; i >= 0; i--) {
       const enemy = enemies[i];
-      enemy.y += enemySpeed;
-      if (enemy.y > canvas.height) {
+      enemy.x -= enemySpeed;
+
+      // Verdwijn als volledig uit beeld links
+      if (enemy.x + enemy.width < 0) {
         enemies.splice(i, 1);
         continue;
       }
+
+      // Botdetectie met kogels (punt-in-rect)
       for (let j = bullets.length - 1; j >= 0; j--) {
         const b = bullets[j];
         if (
